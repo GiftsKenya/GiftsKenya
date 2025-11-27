@@ -1,28 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GiftsKenya - Items Available</title>
-    <!-- Load Tailwind CSS for styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f7f7f7; /* Light background */
-        }
-    </style>
-</head>
-<body class="min-h-screen antialiased">
-
-    <!-- Header: Simple Branding -->
-    <header class="bg-white shadow-md sticky top-0 z-10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <h1 class="text-3xl font-extrabold text-indigo-700 tracking-tight">GiftsKenya</h1>
             <!-- Instructions for the customer -->
             <p class="text-sm text-gray-600 font-medium">Click "Order Now" for instant WhatsApp chat.</p>
-        </div>
+        </div># GiftsKenya
+### Simple E-commerce Page
+
+This is a single-page product listing website for GiftsKenya, using HTML, Tailwind CSS, and JavaScript.
+
+**Features:**
+* Display of current products, descriptions, and prices.
+* "Order Now" buttons link directly to WhatsApp chat with a pre-filled message for instant ordering.
+
+**Live Site:** https://giftskenya.github.io/GiftsKenya/
     </header>
 
     <!-- Product Listing Section: Main Content -->
