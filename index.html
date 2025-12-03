@@ -4,478 +4,679 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gifts Kenya Shop 🇰🇪</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Phosphor Icons (for the cart, trash, etc.) -->
+    <script src="https://unpkg.com/phosphor-icons"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        /* Custom styles and font import */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f7f7;
+        }
+        /* Custom scrollbar for cart sidebar */
+        #cart-items-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        #cart-items-container::-webkit-scrollbar-thumb {
+            background-color: #a0aec0; /* Tailwind gray-500 */
+            border-radius: 4px;
+        }
+        /* Class for admin panel red buttons */
+        .admin-red {
+            background-color: #dc2626; /* bg-red-600 */
+        }
+        .admin-red:hover {
+            background-color: #b91c1c; /* bg-red-700 */
+        }
+        /* Style for the cart slide-out transition */
+        /* Start off-screen */
+        .cart-sidebar-container {
+            transform: translateX(100%);
+        }
+        /* Transition class for slide-in */
+        .cart-slide-in {
+            transform: translateX(0) !important;
+        }
     </style>
 </head>
-<body class="bg-gray-50">
-    <!-- Header -->
-    <header class="bg-indigo-600 text-white shadow-lg">
-        <div class="container mx-auto px-4 py-6">
-            <div class="flex justify-between items-center">
-                <h1 class="text-3xl font-bold">Gifts Kenya Shop 🇰🇪</h1>
-                <div class="text-sm opacity-90" id="userInfo">Loading...</div>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Global Message/Status Box -->
+    <div id="status-message" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 p-3 bg-indigo-500 text-white rounded-lg shadow-xl opacity-0 transition-opacity duration-300 pointer-events-none" role="alert">
+        <!-- Messages appear here -->
+    </div>
+
+    <!-- Header / Navigation -->
+    <header class="bg-white shadow-md p-4 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="text-3xl font-extrabold text-indigo-700 tracking-tight">
+                Gifts Kenya Shop 🇰🇪
+            </div>
+            <div class="text-sm text-gray-600 space-y-1 text-right">
+                <div id="user-id-display" class="font-medium text-xs md:text-sm">User ID: Loading...</div>
             </div>
         </div>
     </header>
 
-    <!-- Floating Cart Button -->
-    <button id="cartBtn" class="fixed top-24 right-6 bg-indigo-600 text-white rounded-full p-4 shadow-lg hover:bg-indigo-700 transition z-50">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
-        </svg>
-        <span id="cartBadge" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">0</span>
-    </button>
-
-    <!-- Main Content -->
-    <main class="container mx-auto px-4 py-8">
-        <!-- Product Grid -->
-        <div id="productGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <!-- Products will be loaded here -->
-        </div>
-
-        <!-- Loading State -->
-        <div id="loadingState" class="text-center py-12">
-            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-            <p class="mt-4 text-gray-600">Loading products...</p>
-        </div>
-
-        <!-- Empty State -->
-        <div id="emptyState" class="hidden text-center py-12">
-            <p class="text-gray-600 text-lg">No products available yet.</p>
-        </div>
-
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl mx-auto p-4 md:p-8 w-full">
         <!-- Admin Panel -->
-        <div id="adminPanel" class="hidden mt-12 bg-red-50 border-2 border-red-500 rounded-lg p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-red-700">Admin Panel</h2>
-                <button id="logoutBtn" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Logout</button>
+        <section id="admin-panel" class="mb-10 p-6 bg-red-50 border-4 border-red-500 rounded-xl shadow-lg hidden">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+                <h2 class="text-2xl font-extrabold text-red-700 mb-2 sm:mb-0">Admin Studio</h2>
+                <button id="admin-logout-btn" class="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition duration-150">Exit Studio</button>
             </div>
             
-            <form id="addProductForm" class="space-y-4">
+            <div id="admin-message" class="hidden p-3 mb-4 text-sm font-medium rounded-lg text-white"></div>
+
+            <h3 class="text-xl font-semibold text-red-700 mb-4">Add New Product</h3>
+            <form id="add-product-form" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
-                    <input type="text" id="productName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500">
+                    <label for="product-name" class="block text-sm font-medium text-gray-700">Product Name</label>
+                    <input type="text" id="product-name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border focus:ring-red-500 focus:border-red-500">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Price (KES)</label>
-                    <input type="number" id="productPrice" required min="1" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500">
+                    <label for="product-price" class="block text-sm font-medium text-gray-700">Price (KES)</label>
+                    <input type="number" id="product-price" placeholder="e.g. 1500" required min="0.01" step="0.01" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border focus:ring-red-500 focus:border-red-500">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Product Image</label>
-                    <input type="file" id="productImage" required accept="image/*" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500">
+                    <label for="product-image" class="block text-sm font-medium text-gray-700">Product Image (Upload)</label>
+                    <input type="file" id="product-image" accept="image/*" required class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-100 file:text-red-700 hover:file:bg-red-200">
                 </div>
-                <button type="submit" class="w-full bg-red-600 text-white py-2 rounded-md hover:bg-red-700 font-medium">Add Product</button>
+                <button type="submit" id="add-product-submit" class="w-full px-4 py-3 admin-red text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition duration-150">Add Product</button>
             </form>
-            
-            <div id="uploadStatus" class="hidden mt-4 p-3 rounded-md"></div>
-        </div>
+        </section>
+
+        <!-- Product Grid -->
+        <section class="mb-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Featured Kenyan Gifts</h2>
+            <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Products will be rendered here -->
+            </div>
+            <div id="loading-message" class="text-center p-8 text-lg text-gray-500">
+                <div class="animate-spin inline-block w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full mr-2"></div>
+                Loading products...
+            </div>
+            <div id="no-products-message" class="hidden text-center p-8 text-lg text-gray-500 bg-gray-100 rounded-lg mt-6">
+                No products are currently available. <span id="add-prompt" class="font-semibold">Try logging into the studio to add some!</span>
+            </div>
+        </section>
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-gray-800 text-white py-8 mt-12">
-        <div class="container mx-auto px-4 text-center">
-            <p class="text-gray-400">© 2024 Gifts Kenya Shop. All rights reserved.</p>
-            <button id="studioLink" class="text-gray-500 hover:text-gray-300 text-sm mt-2 transition">studio</button>
-        </div>
-    </footer>
+    <!-- Floating Cart Button -->
+    <button id="open-cart-btn" class="fixed bottom-5 right-5 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-xl hover:bg-indigo-700 transition duration-300 flex items-center justify-center z-40">
+        <i class="ph ph-shopping-cart text-2xl"></i>
+        <span id="cart-count" class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">0</span>
+    </button>
 
-    <!-- Cart Sidebar -->
-    <div id="cartSidebar" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50">
-        <div class="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl flex flex-col">
-            <div class="bg-indigo-600 text-white p-6 flex justify-between items-center">
-                <h2 class="text-2xl font-bold">Shopping Cart</h2>
-                <button id="closeCart" class="text-white hover:text-gray-200">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
+    <!-- Cart Sidebar/Modal -->
+    <div id="cart-sidebar" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 hidden" aria-modal="true" role="dialog">
+        <div id="cart-sidebar-inner" class="absolute right-0 top-0 w-full md:w-96 bg-white h-full shadow-2xl flex flex-col cart-sidebar-container transition-transform duration-300 ease-in-out">
+            
+            <!-- Cart Header -->
+            <div class="p-5 border-b flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-800 flex items-center">
+                    <i class="ph ph-shopping-bag mr-2 text-indigo-600"></i> Your Cart
+                </h3>
+                <button id="close-cart-btn" class="text-gray-500 hover:text-gray-800">
+                    <i class="ph ph-x-circle text-2xl"></i>
                 </button>
             </div>
-            
-            <div id="cartItems" class="flex-1 overflow-y-auto p-6">
-                <!-- Cart items will be loaded here -->
+
+            <!-- Cart Items -->
+            <div id="cart-items-container" class="flex-grow overflow-y-auto p-4 space-y-4">
+                <p id="empty-cart-message" class="text-center text-gray-500 py-10">Your cart is empty. Start shopping!</p>
+                <!-- Cart items rendered here -->
             </div>
-            
-            <div class="border-t p-6 bg-gray-50">
-                <div class="flex justify-between items-center mb-4 text-xl font-bold">
-                    <span>Total:</span>
-                    <span id="cartTotal">KES 0</span>
+
+            <!-- Cart Footer / Total -->
+            <div class="p-5 border-t space-y-3">
+                <div class="flex justify-between font-bold text-lg text-gray-800">
+                    <span>Grand Total:</span>
+                    <span id="cart-total" class="text-indigo-600">KES 0</span>
                 </div>
-                <button id="checkoutBtn" class="w-full bg-indigo-600 text-white py-3 rounded-md hover:bg-indigo-700 font-medium text-lg">Proceed to Checkout</button>
+                <button id="checkout-btn" class="w-full py-3 bg-indigo-600 text-white font-extrabold rounded-lg shadow-lg hover:bg-indigo-700 transition duration-150" disabled>
+                    Proceed to Checkout
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- PIN Modal -->
-    <div id="pinModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-        <div class="bg-white rounded-lg p-8 max-w-sm w-full mx-4">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Admin Access</h2>
-            <form id="pinForm">
-                <input type="password" id="pinInput" placeholder="Enter PIN" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 mb-4">
-                <div class="flex gap-2">
-                    <button type="submit" class="flex-1 bg-red-600 text-white py-2 rounded-md hover:bg-red-700">Login</button>
-                    <button type="button" id="cancelPin" class="flex-1 bg-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-400">Cancel</button>
-                </div>
-                <p id="pinError" class="hidden text-red-600 text-sm mt-2">Incorrect PIN</p>
+    <!-- Admin PIN Modal -->
+    <div id="pin-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 hidden flex items-center justify-center transition-opacity duration-300" aria-modal="true" role="dialog">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm">
+            <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">Admin Studio Access</h3>
+            <form id="pin-form" class="space-y-4">
+                <label for="admin-pin" class="block text-sm font-medium text-gray-700 text-center">Enter 4-digit PIN (7474)</label>
+                <input type="password" id="admin-pin" placeholder="••••" required maxlength="4" class="w-full text-center text-3xl p-3 border-2 border-indigo-300 rounded-lg focus:border-indigo-500 focus:ring-indigo-500 font-mono tracking-widest">
+                <button type="submit" class="w-full py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-150">Unlock Studio</button>
+                <p id="pin-error" class="text-red-500 text-sm text-center hidden">Invalid PIN. Access denied.</p>
             </form>
         </div>
     </div>
-
-    <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-        <div class="bg-white rounded-lg p-8 max-w-sm w-full mx-4">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Confirm Delete</h2>
-            <p class="text-gray-600 mb-6">Are you sure you want to delete this product?</p>
-            <div class="flex gap-2">
-                <button id="confirmDelete" class="flex-1 bg-red-600 text-white py-2 rounded-md hover:bg-red-700">Delete</button>
-                <button id="cancelDelete" class="flex-1 bg-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-400">Cancel</button>
+    
+    <!-- Confirmation Modal (for Deletion) -->
+    <div id="confirmation-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 hidden flex items-center justify-center transition-opacity duration-300" aria-modal="true" role="dialog">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Confirm Deletion</h3>
+            <p class="text-gray-600 mb-6">Are you sure you want to delete this product? This will remove the image and product data permanently.</p>
+            <div class="flex justify-end space-x-3">
+                <button id="cancel-delete-btn" class="px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition duration-150">Cancel</button>
+                <button id="confirm-delete-btn" class="px-4 py-2 admin-red text-white font-semibold rounded-lg hover:bg-red-700 transition duration-150">Delete Permanently</button>
             </div>
         </div>
     </div>
 
-    <!-- Success Message -->
-    <div id="successMessage" class="hidden fixed top-24 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
-        Order placed successfully! 🎉
-    </div>
 
-    <!-- Firebase SDKs -->
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-gray-400 p-4 text-center mt-auto">
+        <p>&copy; GiftsKenya. All rights reserved. <a href="#" id="studio-link" class="text-indigo-400 hover:text-indigo-300 font-medium ml-2 transition-colors">studio</a></p>
+    </footer>
+
+    <!-- Firebase SDK Imports and JavaScript Logic -->
     <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getAuth, signInWithCustomToken, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-        import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+        // Import necessary Firebase modules from CDNs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, addDoc, onSnapshot, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
-        // Global variables (would be provided in production)
-        const __app_id = window.__app_id || 'demo-app';
-        const __firebase_config = window.__firebase_config || {
-            apiKey: "demo-key",
-            authDomain: "demo.firebaseapp.com",
-            projectId: "demo-project",
-            storageBucket: "demo.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "demo-app-id"
+        // --- GLOBAL STATE & CONFIGURATION ---
+        
+        // Global variables provided by the environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfigString = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        // Firebase Instances
+        let app = null;
+        let db = null;
+        let auth = null;
+        let storage = null;
+        let userId = null;
+        let isAuthReady = false;
+
+        // Application State
+        let products = []; // Array of product objects from Firestore
+        let cart = {}; // { productId: { product, quantity } }
+        let isAdmin = false;
+        const ADMIN_PIN = '7474';
+        let productToDelete = null; // Stores { id, storagePath } for the confirmation flow
+
+        // Firestore Path Builder (Public Data)
+        const getProductsCollectionPath = () => `/artifacts/${appId}/public/data/products`;
+
+        // --- UTILITY FUNCTIONS ---
+
+        // Function to show transient status messages (non-alert)
+        const showStatus = (message, isError = false) => {
+            const statusEl = document.getElementById('status-message');
+            statusEl.textContent = message;
+            
+            // Set styles based on status
+            statusEl.classList.remove('bg-indigo-500', 'bg-red-500');
+            statusEl.classList.add(isError ? 'bg-red-500' : 'bg-indigo-500');
+            
+            // Show the element
+            statusEl.classList.remove('opacity-0', 'pointer-events-none');
+            statusEl.classList.add('opacity-100');
+
+            // Clear existing timeout and set new one
+            clearTimeout(statusEl.dataset.timer);
+            statusEl.dataset.timer = setTimeout(() => {
+                statusEl.classList.remove('opacity-100');
+                statusEl.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
         };
-        const __initial_auth_token = window.__initial_auth_token || null;
 
-        // Initialize Firebase
-        const app = initializeApp(__firebase_config);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const storage = getStorage(app);
+        // Format number to KES currency
+        const formatKES = (amount) => {
+            return new Intl.NumberFormat('en-KE', {
+                style: 'currency',
+                currency: 'KES',
+                minimumFractionDigits: 0
+            }).format(amount);
+        };
 
-        // State
-        let cart = [];
-        let adminMode = false;
-        let currentUser = null;
-        let deleteTarget = null;
+        // --- FIREBASE INITIALIZATION & AUTHENTICATION ---
 
-        // DOM Elements
-        const productGrid = document.getElementById('productGrid');
-        const loadingState = document.getElementById('loadingState');
-        const emptyState = document.getElementById('emptyState');
-        const cartBtn = document.getElementById('cartBtn');
-        const cartBadge = document.getElementById('cartBadge');
-        const cartSidebar = document.getElementById('cartSidebar');
-        const closeCart = document.getElementById('closeCart');
-        const cartItems = document.getElementById('cartItems');
-        const cartTotal = document.getElementById('cartTotal');
-        const checkoutBtn = document.getElementById('checkoutBtn');
-        const studioLink = document.getElementById('studioLink');
-        const pinModal = document.getElementById('pinModal');
-        const pinForm = document.getElementById('pinForm');
-        const pinInput = document.getElementById('pinInput');
-        const pinError = document.getElementById('pinError');
-        const cancelPin = document.getElementById('cancelPin');
-        const adminPanel = document.getElementById('adminPanel');
-        const addProductForm = document.getElementById('addProductForm');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const uploadStatus = document.getElementById('uploadStatus');
-        const deleteModal = document.getElementById('deleteModal');
-        const confirmDelete = document.getElementById('confirmDelete');
-        const cancelDelete = document.getElementById('cancelDelete');
-        const successMessage = document.getElementById('successMessage');
-        const userInfo = document.getElementById('userInfo');
-
-        // Authenticate user
-        async function authenticateUser() {
-            try {
-                if (__initial_auth_token) {
-                    const userCredential = await signInWithCustomToken(auth, __initial_auth_token);
-                    currentUser = userCredential.user;
-                } else {
-                    const userCredential = await signInAnonymously(auth);
-                    currentUser = userCredential.user;
-                }
-                userInfo.textContent = `User: ${currentUser.uid.substring(0, 8)}...`;
-                console.log('User authenticated:', currentUser.uid);
-            } catch (error) {
-                console.error('Authentication error:', error);
-                userInfo.textContent = 'Authentication failed';
-                showStatus('Connection error. Please refresh the page.', 'error');
-            }
-        }
-
-        // Format price
-        function formatPrice(price) {
-            return `KES ${parseFloat(price).toLocaleString('en-KE', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
-        }
-
-        // Update cart badge
-        function updateCartBadge() {
-            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-            cartBadge.textContent = totalItems;
-        }
-
-        // Render cart
-        function renderCart() {
-            if (cart.length === 0) {
-                cartItems.innerHTML = '<p class="text-gray-500 text-center py-8">Your cart is empty</p>';
-                cartTotal.textContent = 'KES 0';
-                checkoutBtn.disabled = true;
-                checkoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        async function initializeFirebase() {
+            if (!firebaseConfigString) {
+                console.error("Firebase configuration is missing.");
+                showStatus('FATAL: Firebase config missing.', true);
+                document.getElementById('loading-message').textContent = 'FATAL: Firebase config missing.';
                 return;
             }
-
-            checkoutBtn.disabled = false;
-            checkoutBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-
-            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            cartTotal.textContent = formatPrice(total);
-
-            cartItems.innerHTML = cart.map(item => `
-                <div class="flex items-center gap-4 mb-4 pb-4 border-b">
-                    <img src="${item.imageUrl}" alt="${item.name}" class="w-16 h-16 object-cover rounded">
-                    <div class="flex-1">
-                        <h3 class="font-medium">${item.name}</h3>
-                        <p class="text-sm text-gray-600">${formatPrice(item.price)} × ${item.quantity}</p>
-                        <p class="font-semibold text-indigo-600">${formatPrice(item.price * item.quantity)}</p>
-                    </div>
-                    <button onclick="removeFromCart('${item.id}')" class="text-red-600 hover:text-red-800">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                        </svg>
-                    </button>
-                </div>
-            `).join('');
-        }
-
-        // Add to cart
-        window.addToCart = function(product) {
-            const existing = cart.find(item => item.id === product.id);
-            if (existing) {
-                existing.quantity++;
-            } else {
-                cart.push({ ...product, quantity: 1 });
-            }
-            updateCartBadge();
-            renderCart();
-        };
-
-        // Remove from cart
-        window.removeFromCart = function(productId) {
-            const existing = cart.find(item => item.id === productId);
-            if (existing) {
-                if (existing.quantity > 1) {
-                    existing.quantity--;
-                } else {
-                    cart = cart.filter(item => item.id !== productId);
-                }
-            }
-            updateCartBadge();
-            renderCart();
-        };
-
-        // Show status message
-        function showStatus(message, type = 'success') {
-            uploadStatus.textContent = message;
-            uploadStatus.className = `mt-4 p-3 rounded-md ${type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`;
-            uploadStatus.classList.remove('hidden');
-            setTimeout(() => uploadStatus.classList.add('hidden'), 3000);
-        }
-
-        // Load products
-        function loadProducts() {
-            const productsRef = collection(db, `artifacts/${__app_id}/public/data/products`);
             
-            onSnapshot(productsRef, (snapshot) => {
-                loadingState.classList.add('hidden');
+            try {
+                const firebaseConfig = JSON.parse(firebaseConfigString);
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                storage = getStorage(app);
                 
-                if (snapshot.empty) {
-                    emptyState.classList.remove('hidden');
-                    productGrid.innerHTML = '';
-                    return;
+                // Sign in with custom token if available, otherwise anonymously
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
                 }
 
-                emptyState.classList.add('hidden');
-                
-                const products = [];
-                snapshot.forEach((doc) => {
-                    products.push({ id: doc.id, ...doc.data() });
+                // Set up Auth State Listener
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        // Display user ID for identification in multi-user environments
+                        document.getElementById('user-id-display').textContent = `User ID: ${userId}`;
+                        isAuthReady = true;
+                        // Once authenticated, start listening to products
+                        listenToProducts();
+                    } else {
+                        // Should not happen after signInAnonymously, but safe guard
+                        document.getElementById('user-id-display').textContent = 'User ID: Anonymous (Error)';
+                        isAuthReady = true;
+                        listenToProducts();
+                    }
                 });
 
-                productGrid.innerHTML = products.map(product => `
-                    <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition">
-                        <img src="${product.imageUrl}" alt="${product.name}" class="w-full h-48 object-cover">
-                        <div class="p-4">
-                            <h3 class="font-semibold text-lg mb-2">${product.name}</h3>
-                            <p class="text-indigo-600 font-bold text-xl mb-4">${formatPrice(product.price)}</p>
-                            <button onclick='addToCart(${JSON.stringify(product)})' class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 transition">Add to Cart</button>
-                            ${adminMode ? `<button onclick="openDeleteModal('${product.id}', '${product.storagePath}')" class="w-full mt-2 bg-red-600 text-white py-2 rounded hover:bg-red-700 transition">Delete</button>` : ''}
-                        </div>
-                    </div>
-                `).join('');
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                showStatus(`Failed to connect to Firebase: ${error.message}`, true);
+                document.getElementById('loading-message').textContent = 'Connection Error. See console for details.';
+            }
+        }
+
+        // --- FIREBASE DATA LISTENERS ---
+
+        function listenToProducts() {
+            if (!db || !isAuthReady) return;
+
+            const productsColRef = collection(db, getProductsCollectionPath());
+            
+            // Real-time listener for the products collection
+            onSnapshot(productsColRef, (snapshot) => {
+                products = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                renderProducts();
+                document.getElementById('loading-message').classList.add('hidden');
             }, (error) => {
-                console.error('Error loading products:', error);
-                loadingState.classList.add('hidden');
-                showStatus('Error loading products. Please check your connection.', 'error');
+                console.error("Error fetching products:", error);
+                document.getElementById('loading-message').classList.add('hidden');
+                document.getElementById('no-products-message').textContent = 'Error loading products. Check console for details.';
+                document.getElementById('no-products-message').classList.remove('hidden');
             });
         }
 
-        // Delete product
-        window.openDeleteModal = function(productId, storagePath) {
-            deleteTarget = { productId, storagePath };
-            deleteModal.classList.remove('hidden');
-        };
+        // --- RENDERING FUNCTIONS ---
 
-        confirmDelete.addEventListener('click', async () => {
-            if (!deleteTarget) return;
-
-            try {
-                // Delete from Firestore
-                await deleteDoc(doc(db, `artifacts/${__app_id}/public/data/products`, deleteTarget.productId));
-                
-                // Delete from Storage
-                if (deleteTarget.storagePath) {
-                    const storageRef = ref(storage, deleteTarget.storagePath);
-                    await deleteObject(storageRef);
-                }
-
-                deleteModal.classList.add('hidden');
-                deleteTarget = null;
-                showStatus('Product deleted successfully!');
-            } catch (error) {
-                console.error('Error deleting product:', error);
-                showStatus('Error deleting product', 'error');
-            }
-        });
-
-        cancelDelete.addEventListener('click', () => {
-            deleteModal.classList.add('hidden');
-            deleteTarget = null;
-        });
-
-        // Admin functions
-        function toggleAdminMode() {
-            adminMode = !adminMode;
+        function renderProducts() {
+            const grid = document.getElementById('products-grid');
+            grid.innerHTML = ''; // Clear existing products
             
-            if (adminMode) {
-                adminPanel.classList.remove('hidden');
-                studioLink.classList.add('text-red-500');
-                studioLink.classList.remove('text-gray-500');
-            } else {
-                adminPanel.classList.add('hidden');
-                studioLink.classList.remove('text-red-500');
-                studioLink.classList.add('text-gray-500');
-            }
-            
-            loadProducts(); // Refresh to show/hide delete buttons
-        }
-
-        // Event listeners
-        cartBtn.addEventListener('click', () => {
-            cartSidebar.classList.remove('hidden');
-            renderCart();
-        });
-
-        closeCart.addEventListener('click', () => {
-            cartSidebar.classList.add('hidden');
-        });
-
-        checkoutBtn.addEventListener('click', () => {
-            cart = [];
-            updateCartBadge();
-            cartSidebar.classList.add('hidden');
-            successMessage.classList.remove('hidden');
-            setTimeout(() => successMessage.classList.add('hidden'), 3000);
-        });
-
-        studioLink.addEventListener('click', () => {
-            if (adminMode) {
-                toggleAdminMode();
-            } else {
-                pinModal.classList.remove('hidden');
-                pinInput.focus();
-            }
-        });
-
-        pinForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            if (pinInput.value === '7474') {
-                pinModal.classList.add('hidden');
-                pinInput.value = '';
-                pinError.classList.add('hidden');
-                toggleAdminMode();
-            } else {
-                pinError.classList.remove('hidden');
-            }
-        });
-
-        cancelPin.addEventListener('click', () => {
-            pinModal.classList.add('hidden');
-            pinInput.value = '';
-            pinError.classList.add('hidden');
-        });
-
-        logoutBtn.addEventListener('click', () => {
-            toggleAdminMode();
-        });
-
-        addProductForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const name = document.getElementById('productName').value;
-            const price = parseFloat(document.getElementById('productPrice').value);
-            const imageFile = document.getElementById('productImage').files[0];
-
-            if (!imageFile) {
-                showStatus('Please select an image', 'error');
+            if (products.length === 0) {
+                document.getElementById('no-products-message').classList.remove('hidden');
+                document.getElementById('products-grid').classList.add('hidden');
+                // Toggle visibility of the "add prompt" based on admin status
+                document.getElementById('add-prompt').classList.toggle('hidden', !isAdmin);
                 return;
             }
 
+            document.getElementById('no-products-message').classList.add('hidden');
+            document.getElementById('products-grid').classList.remove('hidden');
+
+            products.forEach(product => {
+                const productEl = document.createElement('div');
+                productEl.className = 'bg-white rounded-xl shadow-lg overflow-hidden transition-shadow hover:shadow-xl relative flex flex-col';
+                
+                // Show delete button only if in Admin mode
+                const deleteBtnHtml = isAdmin ? `
+                    <button data-product-id="${product.id}" data-storage-path="${product.storagePath || ''}" class="delete-product-btn absolute top-3 right-3 p-2 bg-red-600 text-white rounded-full shadow-lg hover:bg-red-700 transition duration-150 z-10" title="Delete Product">
+                        <i class="ph ph-trash text-lg"></i>
+                    </button>
+                ` : '';
+
+                productEl.innerHTML = `
+                    ${deleteBtnHtml}
+                    <div class="h-48 overflow-hidden bg-gray-100 flex items-center justify-center">
+                        <img src="${product.imageUrl || 'https://placehold.co/400x400/D1D5DB/1F2937?text=No+Image'}" 
+                             alt="${product.name}" 
+                             class="w-full h-full object-cover transition-transform duration-300 hover:scale-105" 
+                             onerror="this.onerror=null;this.src='https://placehold.co/400x400/D1D5DB/1F2937?text=Image+Error';"
+                        >
+                    </div>
+                    <div class="p-4 flex-grow flex flex-col justify-between">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">${product.name}</h3>
+                        <p class="text-2xl font-extrabold text-indigo-600 mb-4">${formatKES(product.price)}</p>
+                        <button data-product-id="${product.id}" class="add-to-cart-btn w-full py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-150 flex items-center justify-center">
+                            <i class="ph ph-bag-simple mr-2"></i> Add to Cart
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(productEl);
+            });
+            // Re-attach event listeners after rendering
+            attachProductEventListeners();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items-container');
+            const totalEl = document.getElementById('cart-total');
+            const checkoutBtn = document.getElementById('checkout-btn');
+            
+            container.innerHTML = '';
+            let grandTotal = 0;
+            let totalItems = 0;
+            let cartHasItems = false;
+
+            for (const id in cart) {
+                const item = cart[id];
+                const itemTotal = item.product.price * item.quantity;
+                grandTotal += itemTotal;
+                totalItems += item.quantity;
+                cartHasItems = true;
+
+                const itemEl = document.createElement('div');
+                itemEl.className = 'flex items-center space-x-4 p-3 bg-white rounded-lg shadow-md border border-gray-100';
+                itemEl.innerHTML = `
+                    <img src="${item.product.imageUrl || 'https://placehold.co/50x50/D1D5DB/1F2937?text=P'}" 
+                         alt="${item.product.name}" 
+                         class="w-12 h-12 object-cover rounded-md flex-shrink-0"
+                         onerror="this.onerror=null;this.src='https://placehold.co/50x50/D1D5DB/1F2937?text=P';"
+                    >
+                    <div class="flex-grow min-w-0">
+                        <p class="font-semibold text-gray-800 truncate">${item.product.name}</p>
+                        <p class="text-xs text-gray-500">${formatKES(item.product.price)} x <span class="font-bold text-indigo-500">${item.quantity}</span></p>
+                    </div>
+                    <div class="text-right flex flex-col items-end">
+                        <p class="font-bold text-base text-indigo-600 mb-1">${formatKES(itemTotal)}</p>
+                        <button data-product-id="${id}" class="remove-from-cart-btn text-red-500 text-xs hover:text-red-700 transition font-medium underline">Remove 1</button>
+                    </div>
+                `;
+                container.appendChild(itemEl);
+            }
+
+            // Update UI elements
+            document.getElementById('cart-count').textContent = totalItems;
+            totalEl.textContent = formatKES(grandTotal);
+            checkoutBtn.disabled = !cartHasItems;
+            document.getElementById('empty-cart-message').classList.toggle('hidden', cartHasItems);
+        }
+
+        // --- CART LOGIC ---
+
+        const addToCart = (productId) => {
+            const product = products.find(p => p.id === productId);
+            if (!product) {
+                showStatus('Error: Product data missing.', true);
+                return;
+            }
+
+            if (cart[productId]) {
+                cart[productId].quantity += 1;
+            } else {
+                cart[productId] = { product, quantity: 1 };
+            }
+            renderCart();
+            showStatus(`${product.name} added to cart!`);
+        };
+
+        const removeFromCart = (productId) => {
+            if (cart[productId]) {
+                cart[productId].quantity -= 1;
+                if (cart[productId].quantity <= 0) {
+                    delete cart[productId];
+                }
+                renderCart();
+                if (cart[productId] || Object.keys(cart).length > 0) {
+                    showStatus('Item quantity reduced in cart.');
+                } else {
+                    showStatus('Item removed from cart. Cart is now empty.');
+                }
+            }
+        };
+
+        const handleCheckout = () => {
+            if (Object.keys(cart).length === 0) return;
+            cart = {};
+            renderCart();
+            showStatus('Order placed successfully! Thank you for shopping with us.', false);
+            
+            // Hide the cart smoothly
+            const sidebarInner = document.getElementById('cart-sidebar-inner');
+            sidebarInner.classList.remove('cart-slide-in');
+            setTimeout(() => document.getElementById('cart-sidebar').classList.add('hidden'), 300);
+        };
+
+
+        // --- ADMIN LOGIC ---
+
+        function toggleAdminMode(enable) {
+            isAdmin = enable;
+            const adminPanel = document.getElementById('admin-panel');
+            const studioLink = document.getElementById('studio-link');
+
+            if (enable) {
+                adminPanel.classList.remove('hidden');
+                studioLink.classList.add('text-red-400', 'font-bold');
+                studioLink.classList.remove('text-indigo-400');
+            } else {
+                adminPanel.classList.add('hidden');
+                studioLink.classList.remove('text-red-400', 'font-bold');
+                studioLink.classList.add('text-indigo-400');
+                // Clear any lingering admin messages on exit
+                document.getElementById('admin-message').classList.add('hidden');
+                document.getElementById('add-product-form').reset();
+            }
+            renderProducts(); // Re-render to show/hide delete buttons
+        }
+
+        async function handleAddProduct(e) {
+            e.preventDefault();
+            const form = e.target;
+            const name = form.elements['product-name'].value.trim();
+            const price = parseFloat(form.elements['product-price'].value);
+            const imageFile = form.elements['product-image'].files[0];
+            
+            if (!name || isNaN(price) || price <= 0 || !imageFile || !db || !storage) {
+                showAdminMessage('Please fill out all fields correctly (Name, Price > 0, and Image).', true);
+                return;
+            }
+
+            const submitBtn = document.getElementById('add-product-submit');
+            submitBtn.innerHTML = '<i class="ph ph-circle-notch animate-spin mr-2"></i> Uploading...';
+            submitBtn.disabled = true;
+            showAdminMessage('Starting upload and database write...');
+
+
             try {
-                showStatus('Uploading...', 'success');
-
-                // Upload image
+                // 1. Upload Image to Storage
                 const timestamp = Date.now();
-                const storagePath = `artifacts/${__app_id}/public/images/${timestamp}_${imageFile.name}`;
-                const storageRef = ref(storage, storagePath);
-                await uploadBytes(storageRef, imageFile);
-                const imageUrl = await getDownloadURL(storageRef);
+                // Create a basic, unique filename
+                const safeFileName = `${timestamp}_${imageFile.name.replace(/[^a-zA-Z0-9.]/g, '_')}`; 
+                const storagePath = `artifacts/${appId}/public/images/${safeFileName}`;
+                const imageRef = ref(storage, storagePath);
 
-                // Add product to Firestore
-                await addDoc(collection(db, `artifacts/${__app_id}/public/data/products`), {
+                const snapshot = await uploadBytes(imageRef, imageFile);
+                const imageUrl = await getDownloadURL(snapshot.ref);
+
+                // 2. Save Product Data to Firestore
+                const productData = {
                     name,
                     price,
                     imageUrl,
-                    storagePath,
+                    storagePath, // Store path for easy deletion
                     createdAt: new Date().toISOString()
-                });
+                };
 
-                showStatus('Product added successfully!');
-                addProductForm.reset();
+                const productsCollectionPath = getProductsCollectionPath();
+                await addDoc(collection(db, productsCollectionPath), productData);
+
+                showAdminMessage('Product added successfully!', false);
+                form.reset();
+
             } catch (error) {
-                console.error('Error adding product:', error);
-                showStatus('Error adding product', 'error');
+                console.error("Error adding product:", error);
+                showAdminMessage(`Error adding product: ${error.message}`, true);
+            } finally {
+                submitBtn.innerHTML = 'Add Product';
+                submitBtn.disabled = false;
             }
-        });
+        }
+        
+        function showAdminMessage(message, isError = false) {
+            const el = document.getElementById('admin-message');
+            el.textContent = message;
+            el.classList.remove('hidden', 'bg-red-600', 'bg-green-600');
+            el.classList.add(isError ? 'bg-red-600' : 'bg-green-600');
+            
+            // Auto-hide success messages
+            if (!isError) {
+                setTimeout(() => el.classList.add('hidden'), 4000);
+            }
+        }
 
-        // Initialize app
-        authenticateUser().then(() => {
-            loadProducts();
+        // --- DELETION LOGIC (Firestore & Storage) ---
+
+        const openDeleteConfirmation = (productId, storagePath) => {
+            productToDelete = { id: productId, storagePath: storagePath };
+            document.getElementById('confirmation-modal').classList.remove('hidden');
+        };
+
+        const closeDeleteConfirmation = () => {
+            productToDelete = null;
+            document.getElementById('confirmation-modal').classList.add('hidden');
+        };
+
+        async function confirmDeleteProduct() {
+            if (!productToDelete || !db || !storage) return;
+
+            const { id: productId, storagePath } = productToDelete;
+            closeDeleteConfirmation(); // Close modal immediately
+            showAdminMessage('Deleting product and image...', false);
+
+            try {
+                // 1. Delete from Storage (Handle potential missing file gracefully)
+                if (storagePath) {
+                    const imageRef = ref(storage, storagePath);
+                    await deleteObject(imageRef);
+                }
+
+                // 2. Delete from Firestore
+                const productDocRef = doc(db, getProductsCollectionPath(), productId);
+                await deleteDoc(productDocRef);
+
+                showAdminMessage('Product deleted successfully!', false);
+                
+            } catch (error) {
+                // If storage object is not found, we proceed to delete the DB record.
+                if (error.code === 'storage/object-not-found') {
+                    console.warn(`Storage file not found at ${storagePath}. Attempting Firestore deletion.`);
+                    try {
+                        const productDocRef = doc(db, getProductsCollectionPath(), productId);
+                        await deleteDoc(productDocRef);
+                        showAdminMessage('Product document deleted (image was already missing).', false);
+                    } catch (dbError) {
+                         showAdminMessage(`Error deleting DB document: ${dbError.message}`, true);
+                         console.error("DB Deletion Error:", dbError);
+                    }
+                } else {
+                    showAdminMessage(`Error during deletion: ${error.message}`, true);
+                    console.error("Deletion Error:", error);
+                }
+            } finally {
+                productToDelete = null;
+            }
+        }
+
+
+        // --- EVENT LISTENERS ---
+
+        function attachProductEventListeners() {
+            // Add to Cart
+            document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+                // Ensure existing listeners are removed to prevent duplicates
+                btn.onclick = null; 
+                btn.onclick = () => addToCart(btn.dataset.productId);
+            });
+            // Delete Product (Admin Mode)
+            document.querySelectorAll('.delete-product-btn').forEach(btn => {
+                btn.onclick = null;
+                btn.onclick = (e) => {
+                    e.stopPropagation(); 
+                    openDeleteConfirmation(btn.dataset.productId, btn.dataset.storagePath);
+                };
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize Firebase when DOM is ready
+            initializeFirebase();
+
+            // Cart Button Handlers
+            document.getElementById('open-cart-btn').onclick = () => {
+                const sidebarInner = document.getElementById('cart-sidebar-inner');
+                document.getElementById('cart-sidebar').classList.remove('hidden');
+                // Use a small timeout for the smooth slide-in effect
+                setTimeout(() => sidebarInner.classList.add('cart-slide-in'), 10);
+                renderCart();
+            };
+            document.getElementById('close-cart-btn').onclick = () => {
+                const sidebarInner = document.getElementById('cart-sidebar-inner');
+                sidebarInner.classList.remove('cart-slide-in');
+                // Use a small delay for the smooth slide-out effect before hiding
+                setTimeout(() => document.getElementById('cart-sidebar').classList.add('hidden'), 300);
+            };
+            document.getElementById('checkout-btn').onclick = handleCheckout;
+            document.getElementById('cart-items-container').addEventListener('click', (e) => {
+                if (e.target.classList.contains('remove-from-cart-btn')) {
+                    removeFromCart(e.target.dataset.productId);
+                }
+            });
+
+            // Admin PIN Modal Handlers
+            document.getElementById('studio-link').onclick = (e) => {
+                e.preventDefault();
+                if (isAdmin) {
+                    toggleAdminMode(false);
+                    showStatus('Admin Studio mode deactivated.');
+                } else {
+                    // Reset pin and error before opening
+                    document.getElementById('admin-pin').value = '';
+                    document.getElementById('pin-error').classList.add('hidden');
+                    document.getElementById('pin-modal').classList.remove('hidden');
+                    document.getElementById('admin-pin').focus();
+                }
+            };
+
+            document.getElementById('pin-form').onsubmit = (e) => {
+                e.preventDefault();
+                const pin = document.getElementById('admin-pin').value;
+                const errorEl = document.getElementById('pin-error');
+                
+                if (pin === ADMIN_PIN) {
+                    errorEl.classList.add('hidden');
+                    document.getElementById('pin-modal').classList.add('hidden');
+                    toggleAdminMode(true);
+                    showStatus('Welcome, Admin! Studio access granted.');
+                } else {
+                    errorEl.classList.remove('hidden');
+                }
+            };
+            
+            // Admin Panel Handlers
+            document.getElementById('admin-logout-btn').onclick = () => {
+                toggleAdminMode(false);
+                showStatus('Admin Studio session ended.');
+            };
+            document.getElementById('add-product-form').onsubmit = handleAddProduct;
+
+            // Confirmation Modal Handlers
+            document.getElementById('cancel-delete-btn').onclick = closeDeleteConfirmation;
+            document.getElementById('confirm-delete-btn').onclick = confirmDeleteProduct;
         });
     </script>
 </body>
