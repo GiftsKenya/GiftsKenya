@@ -183,19 +183,37 @@
         import { getFirestore, doc, addDoc, onSnapshot, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
-        // --- GLOBAL STATE & CONFIGURATION ---
+        // --- GLOBAL SETUP & CONFIGURATION ---
+
+        // IMPORTANT: When running this code externally (like on GitHub Pages), 
+        // the variables __firebase_config, __app_id, and __initial_auth_token are NOT available.
+        // We now define the configuration directly here for external hosting.
         
-        // Global variables provided by the environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfigString = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        
-        // Firebase Instances
-        let app = null;
-        let db = null;
-        let auth = null;
-        let storage = null;
-        let userId = null;
+        // Define app ID and initial auth token (must be defined for the logic below)
+        const appId = 'giftskenyashop'; // Use your actual Project ID or a static app ID here.
+        const initialAuthToken = null; // No custom token needed for public hosting
+
+        const rawFirebaseConfig = JSON.stringify({
+            // =========================================================================================
+            // ⚠️ YOUR ACTUAL FIREBASE CONFIGURATION ⚠️
+            // =========================================================================================
+            apiKey: "AIzaSyC01fz6ryBwL0mfRVYTxpI_CB_lLf9A6a0",
+            authDomain: "giftskenyashop.firebaseapp.com",
+            projectId: "giftskenyashop",
+            storageBucket: "giftskenyashop.firebasestorage.app",
+            messagingSenderId: "854259407246",
+            appId: "1:854259407246:web:dad05b53f7c0c0fc35acdf",
+            measurementId: "G-Q79Q9DFFB2"
+            // =========================================================================================
+        });
+
+        const firebaseConfig = JSON.parse(rawFirebaseConfig);
+
+        let app;
+        let db;
+        let auth;
+        let storage;
+        let userId = 'loading'; // Will be updated after auth
         let isAuthReady = false;
 
         // Application State
